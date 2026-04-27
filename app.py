@@ -14,20 +14,33 @@ def home():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    input_data = request.form.to_dict()
+    try:
+        input_data = request.form.to_dict()
 
-    data = []
-    for col in ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety']:
-        value = input_data[col]
-        encoded = encoders[col].transform([value])[0]
-        data.append(encoded)
+        data = []
 
-    final_input = np.array([data])
-    prediction = model.predict(final_input)
+        columns = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety']
 
-    result = encoders['class'].inverse_transform(prediction)[0]
+        for col in columns:
+            value = input_data.get(col)
 
-    return render_template('index.html', prediction_text=f"Prediction: {result}")
+            # Debug print (for logs)
+            print(f"{col}: {value}")
+
+            # Encode safely
+            encoded = encoders[col].transform([value])[0]
+            data.append(encoded)
+
+        final_input = np.array([data])
+
+        prediction = model.predict(final_input)
+
+        result = encoders['class'].inverse_transform(prediction)[0]
+
+        return render_template('index.html', prediction_text=f"Prediction: {result}")
+
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
