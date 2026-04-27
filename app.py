@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 model = joblib.load('model.joblib')
 
-# Manual encoding (same as dataset)
+# Manual encoding
 mapping = {
     'buying': {'low': 0, 'med': 1, 'high': 2, 'vhigh': 3},
     'maint': {'low': 0, 'med': 1, 'high': 2, 'vhigh': 3},
@@ -17,8 +17,7 @@ mapping = {
     'safety': {'low': 0, 'med': 1, 'high': 2}
 }
 
-class_labels = ['unacc', 'acc', 'good', 'vgood']
-
+# IMPORTANT: safer output handling
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -34,14 +33,16 @@ def predict():
             data.append(mapping[col][value])
 
         final_input = np.array([data])
+
         prediction = model.predict(final_input)
 
-        result = class_labels[prediction[0]]
+        # SAFER: handle any output type
+        result = str(prediction[0])
 
         return render_template('index.html', prediction_text=f"Prediction: {result}")
 
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"ERROR: {str(e)}"
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
