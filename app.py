@@ -6,7 +6,18 @@ import os
 app = Flask(__name__)
 
 model = joblib.load('model.joblib')
-encoders = joblib.load('encoders.joblib')
+
+# Manual encoding (same as dataset)
+mapping = {
+    'buying': {'low': 0, 'med': 1, 'high': 2, 'vhigh': 3},
+    'maint': {'low': 0, 'med': 1, 'high': 2, 'vhigh': 3},
+    'doors': {'2': 0, '3': 1, '4': 2, '5more': 3},
+    'persons': {'2': 0, '4': 1, 'more': 2},
+    'lug_boot': {'small': 0, 'med': 1, 'big': 2},
+    'safety': {'low': 0, 'med': 1, 'high': 2}
+}
+
+class_labels = ['unacc', 'acc', 'good', 'vgood']
 
 @app.route('/')
 def home():
@@ -18,24 +29,14 @@ def predict():
         input_data = request.form.to_dict()
 
         data = []
-
-        columns = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety']
-
-        for col in columns:
-            value = input_data.get(col)
-
-            # Debug print (for logs)
-            print(f"{col}: {value}")
-
-            # Encode safely
-            encoded = encoders[col].transform([value])[0]
-            data.append(encoded)
+        for col in mapping:
+            value = input_data[col]
+            data.append(mapping[col][value])
 
         final_input = np.array([data])
-
         prediction = model.predict(final_input)
 
-        result = encoders['class'].inverse_transform(prediction)[0]
+        result = class_labels[prediction[0]]
 
         return render_template('index.html', prediction_text=f"Prediction: {result}")
 
